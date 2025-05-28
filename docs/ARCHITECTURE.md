@@ -60,6 +60,33 @@ Game Logic Layer
 - **CLTWorldModel**: Represents static world geometry.
 - **CLTItem**: Represents collectible or interactive items.
 
+### Game Object Update System
+
+The engine uses a component-based update system for game objects:
+
+- **CLTGameObject::Update(float deltaTime)**: Main update method called each frame that:
+  1. Updates physics components for non-static objects
+  2. Updates transform components (position, rotation)
+  3. Updates visual components (model, animations)
+  4. Updates spatial partitioning data
+  5. Calls base class update for general object state
+
+- **Component Updates**: The update cascade follows this order:
+  1. Physics controller update (collision resolution, forces)
+  2. Transform update (position, rotation matrices)
+  3. Model update (visual representation, animations)
+  4. Spatial node update (position in spatial partitioning system)
+
+- **Flag-Based Behavior Control**: Object behavior is driven by a flag system:
+  - VISIBLE: Controls if object is rendered
+  - SOLID: Enables collision detection
+  - GRAVITY: Makes object affected by gravity
+  - STATIC: Disables physics updates
+  - INTERACTIVE: Allows player interaction
+  - MOVABLE: Permits movement/teleportation
+  - CASTS_SHADOW: Enables shadow casting
+  - PATHABLE: Allows pathfinding on surfaces
+
 ## Memory Management
 
 The engine uses a custom memory management system with specialized allocators:
@@ -94,6 +121,34 @@ The game uses a custom network protocol with the following characteristics:
 - Encryption for sensitive data
 - Compression for bandwidth optimization
 - State synchronization for game objects
+
+### RPC System
+
+The game implements a Remote Procedure Call (RPC) system for client-server communication:
+
+- **Command Dispatching**: Commands are routed through handler maps based on ID size:
+  ```cpp
+  // Client-side RPC registration and handling
+  typedef void (CLTNetworkHandler::*RPCHandler)(CLTByteBuffer &cmdData);
+  
+  // Maps for byte-sized and short-sized command IDs
+  std::map<uint8_t, RPCHandler> m_byteCommands;
+  std::map<uint16_t, RPCHandler> m_shortCommands;
+  ```
+
+- **Common Client RPC Commands**:
+  - Chat message sending
+  - Player movement and animation
+  - Object interaction
+  - Character actions (jump, crouch, etc.)
+  - UI events and selections
+
+- **Command Processing Flow**:
+  1. Local action triggers command generation
+  2. Command ID and parameters are serialized
+  3. Command is sent to server via PLAYER_COMMAND message
+  4. Server processes command and updates game state
+  5. Server sends state updates to relevant clients
 
 ## Rendering Pipeline
 
